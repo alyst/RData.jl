@@ -183,16 +183,19 @@ Context for reading R bytecode.
 """
 struct BytecodeContext
     ctx::RDAContext         # parent RDA context
-    ref_tab::Vector{Any}    # table of bytecode references
+    ref_tab::Vector{Union{RBytecode, Missing}}    # table of bytecode references
 
-    BytecodeContext(ctx::RDAContext, nrefs::Int32) = new(ctx, Vector{Any}(Int(nrefs)))
+    BytecodeContext(ctx::RDAContext, nrefs::Int32) =
+        new(ctx, Vector{Union{RBytecode, Missing}}(missing, nrefs))
 end
 
 const BYTECODELANG_Types = Set([BCREPREF, BCREPDEF, LANGSXP, LISTSXP, ATTRLANGSXP, ATTRLISTSXP])
 
 function readbytecodelang(bctx::BytecodeContext, bctype::Int32)
     if bctype == BCREPREF # refer to an already defined bytecode
-        return bctx.ref_tab[readint32(bctx.ctx.io)+1]
+        res = bctx.ref_tab[readint32(bctx.ctx.io)+1]
+        @assert !ismissing(res)
+        return res
     elseif bctype ∈ BYTECODELANG_Types
         pos = 0
         hasattr = false
@@ -221,7 +224,7 @@ end
 
 function readbytecodeconsts(bctx::BytecodeContext)
     nconsts = readint32(bctx.ctx.io)
-    v = Vector{RSEXPREC}(nconsts)
+    v = fill!(Vector{RSEXPREC}(undef, nconsts), RDummy{NILVALUE_SXP}())
     @inbounds for i = 1:nconsts
         bctype = readint32(bctx.ctx.io)
         v[i] = if bctype == BCODESXP
