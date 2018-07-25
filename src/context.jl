@@ -28,24 +28,25 @@ function RDAContext(io::RDAIO; kwoptions...)
     RDAContext(io, fmtver, rver, rminver, kwdict, RSEXPREC[])
 end
 
-function contextify(io::IO, fname::AbstractString, rdata::Bool=true; kwoptions...)
+function RDAContext(io::IO, f::File; kwoptions...)
     sig = read(io, 2)
     seekstart(io)
-                # create the appropriate decompressed stream
+    # create the appropriate decompressed stream
     st = sig == [0x1f,0x8b] ? GzipDecompressorStream(io) :
          sig == [0x42,0x5a] ? Bzip2DecompressorStream(io) :
          sig == [0xfd,0x37] ? XzDecompressorStream(io) : io
-                # for RData format files, check the header
-    !rdata || (m = match(r"^RD[A,B,X]2$", readline(st))) ≠ nothing ||
-        throw(ArgumentError("File $fname not in .rda format"))
+    # for RData format files, check the header
+    if f isa File{format"RData"} && (m = match(r"^RD[A,B,X]2$", readline(st))) === nothing
+        throw(ArgumentError("File $(filename(f)) not in .rda format"))
+    end
     ch = readline(st)
     ctx = RDAContext(ch == "X" ? XDRIO(st) : ch == "A" ? ASCIIIO(st) :
                      ch == "B" ? NativeIO(st) : error("Unrecognized code $ch");
                      kwoptions...)
-                     
+
     @assert ctx.fmtver == 2    # format version
 
-    ctx
+    return ctx
 end
 
 """

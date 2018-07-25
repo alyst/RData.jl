@@ -30,7 +30,7 @@ include("readers.jl")
 
 function load(f::File{format"RData"}; kwoptions...)
     open(filename(f), "r") do io
-        ctx = contextify(io, filename(f), true; kwoptions...)
+        ctx = RDAContext(io, f; kwoptions...)
 
         convert2julia = get(ctx.kwdict, :convert, true)
         # top level read -- must be a paired list of objects
@@ -55,7 +55,7 @@ end
 
 function load(f::File{format"RDataSingle"}; kwoptions...)
     open(filename(f), "r") do io
-        ctx = contextify(io, filename(f), false; kwoptions...)
+        ctx = RDAContext(io, f; kwoptions...)
         get(ctx.kwdict, :convert, true) ? sexp2julia(readitem(ctx)) : readitem(ctx)
     end
 end
