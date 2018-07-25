@@ -1,5 +1,5 @@
 module TestRDS
-    using DataFrames, FileIO, RData, Test, TimeZones
+    using DataFrames, FileIO, RData, Test, Dates, TimeZones
 
     testdir = dirname(@__FILE__)
 
@@ -43,10 +43,10 @@ module TestRDS
 
     @testset "Test Date conversion" begin
         dates = load("$testdir/data/dates.rds")
-        @test dates[1] == Date("2017-01-01") + Dates.Day.(1:4)
+        @test dates[1] == Date("2017-01-01") + Day.(1:4)
         @test dates[2] == Date("2017-01-02")
         @test dates[3] isa DictoVec
-        @test dates[3].data == Date("2017-01-01") + Dates.Day.(1:4)
+        @test dates[3].data == Date("2017-01-01") + Day.(1:4)
         @test [dates[3].index2name[i] for i in 1:length(dates[3])] == ["A", "B", "C", "D"]
         @test dates[4] isa DictoVec
         @test dates[4].data == [Date("2017-01-02")]
@@ -55,7 +55,7 @@ module TestRDS
 
     @testset "Test DateTime conversion" begin
         datetimes = load("$testdir/data/datetimes.rds")
-        testdts = ZonedDateTime.(DateTime("2017-01-01T13:23") + Dates.Second.(1:4),
+        testdts = ZonedDateTime.(DateTime("2017-01-01T13:23") + Second.(1:4),
                                  TimeZone("UTC"))
         @test datetimes[1] == testdts
         @test datetimes[2] == testdts[1]
@@ -69,8 +69,8 @@ module TestRDS
 
     @testset "Test Date and DateTime in a DataFrame" begin
         rdfs = load("$testdir/data/datedfs.rds")
-        df = DataFrame(date=Date("2017-01-01") + Dates.Day.(1:4),
-                       datetime=ZonedDateTime.(DateTime("2017-01-01T13:23") + Dates.Second.(1:4),
+        df = DataFrame(date=Date("2017-01-01") + Day.(1:4),
+                       datetime=ZonedDateTime.(DateTime("2017-01-01T13:23") + Second.(1:4),
                                                tz"UTC"))
         @test length(rdfs) == 2
         @test rdfs[1] isa DataFrame
@@ -84,10 +84,10 @@ module TestRDS
     @testset "Test NA Date and DateTime conversion" begin
         dates = load("$testdir/data/datesNA.rds")
 
-        testdates = [Date("2017-01-01") + Dates.Day.(1:4); missing]
+        testdates = [Date("2017-01-01") + Day.(1:4); missing]
         @test all(dates[1] .=== testdates)
 
-        testdts = [ZonedDateTime.(DateTime("2017-01-01T13:23") + Dates.Second.(1:4), tz"UTC");
+        testdts = [ZonedDateTime.(DateTime("2017-01-01T13:23") + Second.(1:4), tz"UTC");
                    missing]
         @test all(dates[2] .=== testdts)
     end
