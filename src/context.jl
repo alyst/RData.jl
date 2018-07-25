@@ -20,7 +20,7 @@ end
 
 int2ver(v::Integer) = VersionNumber(v >> 16, (v >> 8) & 0xff, v & 0xff)
 
-function RDAContext(io::RDAIO, kwoptions::AbstractDict)
+function RDAContext(io::RDAIO; kwoptions...)
     fmtver = readuint32(io)
     rver = int2ver(readint32(io))
     rminver = int2ver(readint32(io))
@@ -28,7 +28,7 @@ function RDAContext(io::RDAIO, kwoptions::AbstractDict)
     RDAContext(io, fmtver, rver, rminver, kwdict, RSEXPREC[])
 end
 
-function contextify(io::IO, fname::AbstractString, rdata::Bool=true, kwargs::AbstractDict=Dict{Symbol,Any}())
+function contextify(io::IO, fname::AbstractString, rdata::Bool=true; kwoptions...)
     sig = read(io, 2)
     seekstart(io)
                 # create the appropriate decompressed stream
@@ -40,8 +40,8 @@ function contextify(io::IO, fname::AbstractString, rdata::Bool=true, kwargs::Abs
         throw(ArgumentError("File $fname not in .rda format"))
     ch = readline(st)
     ctx = RDAContext(ch == "X" ? XDRIO(st) : ch == "A" ? ASCIIIO(st) :
-                     ch == "B" ? NativeIO(st) : error("Unrecognized code $ch"),
-                     kwargs)
+                     ch == "B" ? NativeIO(st) : error("Unrecognized code $ch");
+                     kwoptions...)
                      
     @assert ctx.fmtver == 2    # format version
 
